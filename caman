@@ -581,6 +581,27 @@ case "$CMD" in
         generate_crl
 
         ;;
+
+     multisign)
+        if [ -f $HOST ] ; then
+            while read line; do
+                for host in $line ; do
+                    if [ -d $STOREDIR/$host ] ; then
+                        echo "Store for $host already exists"
+                    else
+                        echo "Creating and signing for $host"
+                        $0 new $host &> $STOREDIR/$host-new.log || exit 1
+                        mv $STOREDIR/$host-new.log $STOREDIR/$host
+                        $0 sign $host &> $STOREDIR/$host/$host-sign.log || exit 1
+                    fi
+                done
+            done < $HOST
+        else
+            echo "Requires file containing host names"
+            exit 1
+        fi
+        ;;
+
     *)
         cat <<EOF
 Caman version $VERSION
@@ -592,6 +613,7 @@ Usage:  caman init [ca:<path/to/root_ca>]
         caman revoke <hostname>
         caman revoke ca:<path/to/intermediate_ca>
         caman crl
+        caman multisign <file of hostnames>
 EOF
 
         ;;
