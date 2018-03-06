@@ -519,6 +519,25 @@ function command_create {
 
 }
 
+function command_list {
+    call_openssl_ca -updatedb -config "$CADIR/caconfig.cnf"
+    echo "Valid:"
+    grep '^V' "$CADIR/index.txt" | \
+        sed -r 's@.*/CN=([^/]+?)/.*@\1@' | \
+        sed -r 's/^/    /' | \
+        sort
+    echo "Expired:"
+    grep '^E' "$CADIR/index.txt" | \
+        sed -r 's@.*/CN=([^/]+?)/.*@\1@' | \
+        sed -r 's/^/    /' | \
+        sort
+    echo "Revoked:"
+    grep '^R' "$CADIR/index.txt" | \
+        sed -r 's@.*/CN=([^/]+?)/.*@\1@' | \
+        sed -r 's/^/    /' | \
+        sort
+}
+
 #
 # Process command
 #
@@ -602,6 +621,11 @@ case "$CMD" in
         fi
         ;;
 
+    list)
+        command_list
+
+        ;;
+
     *)
         cat <<EOF
 Caman version $VERSION
@@ -613,6 +637,7 @@ Usage:  caman init [ca:<path/to/root_ca>]
         caman revoke <hostname>
         caman revoke ca:<path/to/intermediate_ca>
         caman crl
+        caman list
         caman multisign <file of hostnames>
 EOF
 
