@@ -2,6 +2,15 @@
 
 ### Changelog
 
+**0.4.0**, 2018-03-06: Support new commands
+* Added ``list`` command from  [Tiziano Müller](https://github.com/dev-zero)
+* Generate Java Keystore from  [Tiziano Müller](https://github.com/dev-zero)
+* Multiple bug fixes from [Tiziano Müller](https://github.com/dev-zero)
+* Added ``crl`` command to regenerate the CRL
+* Bug fix from [Tobias Johnson](https://github.com/irontoby)
+* Added ``create`` command to copy config files before running ``init``
+ from  [Wesley Hartford](https://github.com/wfhartford)
+
 **0.3.2**, 2016-11-24: Fix from [TakeMeNL](https://github.com/TakeMeNL)
 * Exit after "cannot renew" message
 
