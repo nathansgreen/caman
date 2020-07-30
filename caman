@@ -35,6 +35,10 @@ if [[ ! -d "$CADIR" && "$CMD" != "create" ]]; then
     echo "Certificate authority directory does not exist"
     exit 1
 fi
+MACHINE=$(uname -s)
+case "${MACHINE}" in
+    Darwin*) which -s gsed && sed() { gsed "$@"; } || echo "ERROR: Missing gnu-sed" >&2 ;;
+esac
 
 
 
