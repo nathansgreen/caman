@@ -21,8 +21,7 @@ To create a certificate authority and start signing:
 
     git clone https://github.com/radiac/caman.git
     cd caman
-    cp ca/caconfig.cnf.default ca/caconfig.cnf && vi ca/caconfig.cnf
-    cp ca/host.cnf.default ca/host.cnf && vi ca/host.cnf
+    ./caman create && vi ca/caconfig.cnf && vi ca/host.cnf
     ./caman init
     ./caman new host.example.com
     ./caman sign host.example.com
