@@ -29,6 +29,10 @@ STOREDIR_NAME="store"
 STOREDIR="$CAMANDIR/$STOREDIR_NAME"
 HOSTDIR="$STOREDIR/$HOST"
 DATEDIR=$(date +"%Y-%m-%d")
+MACHINE=$(uname -s)
+case "${MACHINE}" in
+    Darwin*) which -s gsed && sed() { gsed "$@"; } || echo "ERROR: Missing gnu-sed" >&2 ;;
+esac
 
 # Check cert authority directory exists
 if [[ ! -d "$CADIR" && "$CMD" != "create" ]]; then
