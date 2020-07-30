@@ -12,7 +12,7 @@ This document explains how to use caman to
 [create, sign, renew and revoke](#managing-host-certificates) host
 certificates.
 
-Version 0.4.0, 2018-03-06. For changelog and upgrade information, see
+Version 0.5.0, 2018-06-07. For changelog and upgrade information, see
 [Changes](CHANGES.md)
 
 ### Quickstart

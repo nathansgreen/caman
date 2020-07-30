@@ -2,9 +2,16 @@
 
 ### Changelog
 
+**0.5.0**, 2018-06-07: Support client certificates
+* Add support for signing and renewing client certificates with commands
+ ``client_sign`` and ``client_renew`` from
+ [Jiri Machalek](https://github.com/machalekj)
+* PKCS12: include "friendly name" for 389ds from
+ [Tiziano Müller](https://github.com/dev-zero)
+
 **0.4.0**, 2018-03-06: Support new commands
-* Added ``list`` command from  [Tiziano Müller](https://github.com/dev-zero)
-* Generate Java Keystore from  [Tiziano Müller](https://github.com/dev-zero)
+* Added ``list`` command from [Tiziano Müller](https://github.com/dev-zero)
+* Generate Java Keystore from [Tiziano Müller](https://github.com/dev-zero)
 * Multiple bug fixes from [Tiziano Müller](https://github.com/dev-zero)
 * Added ``crl`` command to regenerate the CRL
 * Bug fix from [Tobias Johnson](https://github.com/irontoby)
