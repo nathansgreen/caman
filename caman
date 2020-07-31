@@ -543,6 +543,16 @@ function command_create {
 
 }
 
+function command_dump_ca {
+    call_openssl x509 -in "$CADIR/ca.crt.pem" -text -noout
+}
+
+function command_dump_host {
+    local path
+    path=$(find "$HOSTDIR" -type d -mindepth 1 | sort -r | head -n 1)
+    call_openssl x509 -in "$path/$HOST.crt.pem" -text -noout
+}
+
 function command_list {
     call_openssl_ca -updatedb -config "$CADIR/caconfig.cnf"
     echo "Valid:"
@@ -663,6 +673,15 @@ case "$CMD" in
 
         ;;
 
+    dump)
+        if [[ $HOST == ca:* ]] ; then
+            command_dump_ca
+        else
+            # Dump a certificate into text format
+            command_dump_host
+        fi
+        ;;
+
     *)
         cat <<EOF
 Caman version $VERSION
@@ -675,6 +694,7 @@ Usage:  caman init [ca:<path/to/root_ca>]
         caman client_renew <hostname>
         caman revoke <hostname>
         caman revoke ca:<path/to/intermediate_ca>
+        caman dump <hostname> | ca:[path/to/root_ca]
         caman crl
         caman list
         caman multisign <file of hostnames>
