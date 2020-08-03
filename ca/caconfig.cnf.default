@@ -46,6 +46,7 @@ copy_extensions         = copy
 [ policy_match ]
 countryName             = supplied
 stateOrProvinceName     = supplied
+localityName            = supplied
 organizationName        = supplied
 organizationalUnitName  = supplied
 commonName              = supplied
@@ -70,6 +71,7 @@ string_mask             = utf8only
 #   countryName must be 2 character character code
 countryName             = CN
 stateOrProvinceName     = State or province
+localityName            = Locality
 organizationName        = My Organisation
 organizationalUnitName  = My Certificate Authority
 commonName              = My Certificate Authority
