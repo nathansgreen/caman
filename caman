@@ -4,7 +4,7 @@
 # Initialise
 #
 
-VERSION="0.5.0"
+VERSION="0.5.1"
 
 # Settings
 DEBUG=false
@@ -243,6 +243,17 @@ function command_init {
     generate_crl
 
     echo "Certificate authority created"
+}
+
+function command_renew_ca {
+    INSTANCE=0
+    while [[ -e "$CADIR/ca.crt.pem.$INSTANCE" ]] ; do
+        let INSTANCE++
+    done
+    cp "$CADIR/ca.crt.pem" "$CADIR/ca.crt.pem.$INSTANCE"
+    echo "Signing CA public certificate..."
+    call_openssl_req -x509 -new -key "$CADIR/ca.key.pem" -days $DAYS \
+        -out "$CADIR/ca.crt.pem" -config "$CADIR/caconfig.cnf"
 }
 
 function command_new {
@@ -620,12 +631,29 @@ case "$CMD" in
         ;;
 
     renew)
-        # Renew a host certificate by revoking then signing
-        if [[ $(split_ca $HOST) ]] ; then
-            echo "Cannot renew a \"ca:\" path"
-            exit 1
+        if [[ $HOST == ca:* ]] ; then
+            set -x
+            ROOT_CA=$(split_ca $HOST)
+            echo $CADIR $CADIR_NAME
+            exit 0
+            if [[ "$ROOT_CA"x != "x" ]] ; then
+                echo "Alternate path '$ROOT_CA' not supported"
+                exit 1
+            fi
+            if [[ ! -f "$CADIR/ca.crt.pem" ]] ; then
+                echo "CA root cert does not exist, cannot renew. Missing $CADIR/ca.crt.pem"
+                exit 1
+            fi
+            DAYS=$(get_days "$CADIR/caconfig.cnf")
+            if [[ -z $DAYS ]] ; then
+                echo "Cannot find default_days in $CADIR/caconfig.cnf"
+                exit 1
+            fi
+            command_renew_ca
+            exit $?
         fi
 
+        # Renew a host certificate by revoking then signing
         command_revoke
         command_sign_host
 
@@ -689,7 +717,7 @@ Caman version $VERSION
 Usage:  caman init [ca:<path/to/root_ca>]
         caman new <hostname> [<alt> [<alt> [...]]]
         caman sign <hostname>
-        caman renew <hostname>
+        caman renew <hostname> | ca:[path/to/root_ca]
         caman client_sign <hostname>
         caman client_renew <hostname>
         caman revoke <hostname>
