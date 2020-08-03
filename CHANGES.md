@@ -2,6 +2,11 @@
 
 ### Changelog
 
+**0.5.1**, 2020-08-03: Updates from [Nathan Green](https://github.com/nathansgreen)
+* Switch to gnu-sed (``gsed`) if macOS is detected.
+* Add ``dump`` command to show cert in text format.
+* Add ``localityName`` to default template.
+
 **0.5.0**, 2018-06-07: Support client certificates
 * Add support for signing and renewing client certificates with commands
  ``client_sign`` and ``client_renew`` from
