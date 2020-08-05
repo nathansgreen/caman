@@ -349,7 +349,7 @@ function command_new {
         sed -E -i "/(^$k\s+=)(.*)/,\${s//\1 $v/;b};\$q4" "$HOSTDIR/config.cnf" \
             || case ${k} in
                 localityName)
-                    sed -E -i "/^countryName\s+=/a localityName            = $v" \
+                    sed -E -i "/^stateOrProvinceName\s+=/a localityName            = $v" \
                         "$HOSTDIR/config.cnf";;
                 *) echo "ERR: missing key $k" >&2
             esac
