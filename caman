@@ -299,7 +299,9 @@ function command_new {
     # replace host's distinguished_name values if present
     for kv in ${CAMAN_ALT_HOSTNAMES}; do
         printf "%s" "$kv" | grep -q '=' || continue
-        k=$(printf "%s" "$kv" | cut -d= -f1)
+        # remove optional '-' or '--' prefix from key
+        k=$(printf "%s" "$kv" | cut -d= -f1 | sed -E 's/^--?//')
+        v=$(printf "%s" "$kv" | cut -d= -f2)
         case ${k} in
             country*) k=countryName;;
             state*) k=stateOrProvinceName;;
@@ -307,9 +309,17 @@ function command_new {
             org|orgName|organ*) k=organizationName;;
             unit|ou|organizationalUnitName) k=organizationalUnitName;;
             mail|email*) k=emailAddress;;
+            days|default_days)
+                k=default_days
+                days=$((0 + v)) 2>&1 >/dev/null
+                if [ $? -ne 0 ] || [ $days -lt 1 ]; then
+                    echo "ERR: invalid days $k" >&2
+                    exit 9
+                fi
+                # re-assign value from math to deal with hex/octal changes
+                v=${days};;
             *) continue  # unknown key is not part of distinguished_name
         esac
-        v=$(printf "%s" "$kv" | cut -d= -f2)
         # substitute value if key is found, else return 4
         sed -E -i "/(^$k\s+=)(.*)/,\${s//\1 $v/;b};\$q4" "$HOSTDIR/config.cnf" \
             || case ${k} in
