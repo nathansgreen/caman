@@ -96,6 +96,16 @@ function get_days {
     perl -nle 'print $1 if /^default_days\s+=\s+(\d+)\s*$/' "$CONFIG"
 }
 
+get_number() {
+    local num val=$1 name=$2
+    num=$((0 + val)) 2>&1 >/dev/null
+    if [ $? -ne 0 ] || [ ${num} -lt 1 ]; then
+        echo "ERR: invalid $name $val" >&2
+        return 9
+    fi
+    echo ${num}
+}
+
 function generate_crl {
     # Generate the CRL
     # OpenSSL arguments:
@@ -336,13 +346,13 @@ function command_new {
             mail|email*) k=emailAddress;;
             days|default_days)
                 k=default_days
-                days=$((0 + v)) 2>&1 >/dev/null
-                if [ $? -ne 0 ] || [ $days -lt 1 ]; then
-                    echo "ERR: invalid days $k" >&2
-                    exit 9
-                fi
                 # re-assign value from math to deal with hex/octal changes
-                v=${days};;
+                v=$(get_number ${v} 'days')
+                [ $? -eq 0 ] || exit $? ;;
+            bits*)
+                k=default_bits
+                v=$(get_number ${v} 'bits')
+                [ $? -eq 0 ] || exit $? ;;
             *) continue  # unknown key is not part of distinguished_name
         esac
         # substitute value if key is found, else return 4
@@ -350,6 +360,9 @@ function command_new {
             || case ${k} in
                 localityName)
                     sed -E -i "/^stateOrProvinceName\s+=/a localityName            = $v" \
+                        "$HOSTDIR/config.cnf";;
+                default_bits)
+                    sed -E -i "/^req_extensions\s+=/a default_bits            = $v" \
                         "$HOSTDIR/config.cnf";;
                 *) echo "ERR: missing key $k" >&2
             esac
@@ -369,6 +382,21 @@ function command_sign_common {
         echo "Cannot find default_days in $HOSTDIR/config.cnf"
         exit 1
     fi
+
+    BITS=
+    # Process additional arguments
+    for kv in ${@:2}; do
+        printf "%s" "$kv" | grep -q '=' || continue
+        # remove optional '-' or '--' prefix from key
+        k=$(printf "%s" "$kv" | cut -d= -f1 | sed -E 's/^--?//')
+        v=$(printf "%s" "$kv" | cut -d= -f2)
+        case ${k} in
+            bits*)
+                v=$(get_number ${v} 'bits')
+                [ $? -eq 0 ] || exit $?
+                BITS="-newkey rsa:$v" ;;
+        esac
+    done
 
     # Determine where the cert is going
     CERTDIR="$HOSTDIR/$DATEDIR"
@@ -399,10 +427,10 @@ function command_sign_common {
         #   -config "..."       Path to host config created by ``new``
         # No need for CA password here
         echo "Creating CSR and private key..."
-        call_openssl req -sha256 \
-            -newkey rsa:2048 -nodes -keyout "$CERTDIR/$HOST.key.pem" \
+        call_openssl_req -sha256 \
+            ${BITS} -nodes -keyout "$CERTDIR/$HOST.key.pem" \
             -new -out "$CERTDIR/$HOST.csr" \
-            -config "$HOSTDIR/config.cnf" -batch
+            -config "$HOSTDIR/config.cnf"
     fi
 
     # Sign the request
@@ -487,7 +515,7 @@ function command_sign_host {
     # Create a new CSR, private key and signed certificate (for servers)
     #
 
-    command_sign_common usr_cert
+    command_sign_common usr_cert "$@"
 }
 
 function command_sign_client {
@@ -495,7 +523,7 @@ function command_sign_client {
     # Create a new CSR, private key and signed certificate (for clients)
     #
 
-    command_sign_common client_cert
+    command_sign_common client_cert "$@"
 }
 
 function command_sign_ca {
@@ -684,14 +712,14 @@ case "$CMD" in
         if [[ $INTERMEDIATE_CA ]] ; then
             command_sign_ca
         else
-            command_sign_host
+            command_sign_host ${@:3}
         fi
 
         ;;
 
     client_sign)
         # Create a new CSR, private key and signed certificate (for clients)
-        command_sign_client
+        command_sign_client ${@:3}
 
         ;;
 
@@ -787,9 +815,9 @@ Caman version $VERSION
 
 Usage:  caman init [ca:<path/to/root_ca>]
         caman new <hostname> [<alt> [<alt> [...]]] [DN_key=value [...]]
-        caman sign <hostname>
+        caman sign <hostname> [--bits=N]
         caman renew <hostname> | ca:[path/to/root_ca]
-        caman client_sign <hostname>
+        caman client_sign <hostname> [--bits=N]
         caman client_renew <hostname>
         caman revoke <hostname>
         caman revoke ca:<path/to/intermediate_ca>
