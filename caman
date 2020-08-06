@@ -245,11 +245,36 @@ function command_init {
     echo "Certificate authority created"
 }
 
+command_new_help() {
+    cat <<-EOF
+	Usage:
+	    $(basename $0) new <hostname> [options]
+
+	Options:
+	    <alt>           alternate hostname(s) ([<alt> ...])
+	    <DN_key=value>  set distinguished name key/value pair(s) ([key=value> ...]
+
+	                    --countryName
+	                    --stateOrProvinceName
+	                    --localityName
+	                    --organizationName
+	                    --organizationalUnitName
+	                    --emailAddress
+
+	    --days=N        number of days until the certificate expires
+
+	EOF
+}
+
 function command_new {
     #
     # Add a new host
     #
 
+    test ${#HOST} -eq 0 && { command_new_help ; exit 1; }
+    case ${HOST} in
+        -h|-help|-\?|--help) command_new_help; return 0;;
+    esac
     test ${#HOST} -gt 253 && {
         echo "hostname length must be <= 253 but was ${#HOST}" 1>&2; exit 1; }
     (IFS=.
