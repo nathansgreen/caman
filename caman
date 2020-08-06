@@ -255,23 +255,43 @@ function command_new {
     cp "$CADIR/host.cnf" "$HOSTDIR/config.cnf"
 
     # Set hostname
-    perl -pi -e "s/<<HOSTNAME>>/$HOST/g" "$HOSTDIR/config.cnf"
+    sed -i "s/<<HOSTNAME>>/$HOST/g" "$HOSTDIR/config.cnf"
 
     # Add alt hostnames
     CAMAN_ALT_HOSTNAMES="${*:2}"
-    PERL_ALT_HOSTNAMES='
-        if (/<<ALT_HOSTNAMES>>/) {
-            my @hosts = split(/ /, "'$CAMAN_ALT_HOSTNAMES'");
-            foreach $h (@hosts) {
-                $h = ($h =~ /^\d+(\.\d+){3}+$/ ? "IP:" : "DNS:") . $h;
-            }
-            print "subjectAltName = " . join(", ", @hosts) . "\n" if @hosts;
-        } else {
-            print;
-        }
-        '
-    perl -ni -e "$PERL_ALT_HOSTNAMES" "$HOSTDIR/config.cnf"
+    ALT_HOSTNAMES=
+    for h in ${CAMAN_ALT_HOSTNAMES}; do
+        printf "%s" "$h" | grep -q '=' && break
+        printf "%s" "$h" | grep -qE '^\d+(\.\d+){3}$' \
+            && { h="IP:$h"; } \
+            || { h="DNS:$h"; }
+        if [ ${#ALT_HOSTNAMES} -eq 0 ]; then
+            ALT_HOSTNAMES="subjectAltName          = $h"
+        else
+            ALT_HOSTNAMES="$ALT_HOSTNAMES, $h"
+        fi
+    done
+    sed -i "s/<<ALT_HOSTNAMES>>/$ALT_HOSTNAMES/g" "$HOSTDIR/config.cnf"
 
+    # replace host's distinguished_name values if present
+    for kv in ${CAMAN_ALT_HOSTNAMES}; do
+        printf "%s" "$kv" | grep -q '=' || continue
+        k=$(printf "%s" "$kv" | cut -d= -f1)
+        case ${k} in
+            country*) k=countryName;;
+            state*) k=stateOrProvinceName;;
+            local*) k=localityName;;
+            org|orgName|organ*) k=organizationName;;
+            unit|ou|organizationalUnitName) k=organizationalUnitName;;
+            cn|common*) k=commonName;;
+            mail|email*) k=emailAddress;;
+            *) continue  # unknown key is not part of distinguished_name
+        esac
+        v=$(printf "%s" "$kv" | cut -d= -f2)
+        # substitute value if key is found, else return 4
+        sed -E -i "/(^$k\s+=)(.*)/,\${s//\1 $v/;b};\$q4" "$HOSTDIR/config.cnf" \
+            || echo "ERR: missing key $k" >&2
+    done
     echo "New host added"
 }
 
@@ -687,7 +707,7 @@ case "$CMD" in
 Caman version $VERSION
 
 Usage:  caman init [ca:<path/to/root_ca>]
-        caman new <hostname> [<alt> [<alt> [...]]]
+        caman new <hostname> [<alt> [<alt> [...]]] [DN_key=value [...]]
         caman sign <hostname>
         caman renew <hostname>
         caman client_sign <hostname>
