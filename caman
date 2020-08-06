@@ -283,14 +283,18 @@ function command_new {
             local*) k=localityName;;
             org|orgName|organ*) k=organizationName;;
             unit|ou|organizationalUnitName) k=organizationalUnitName;;
-            cn|common*) k=commonName;;
             mail|email*) k=emailAddress;;
             *) continue  # unknown key is not part of distinguished_name
         esac
         v=$(printf "%s" "$kv" | cut -d= -f2)
         # substitute value if key is found, else return 4
         sed -E -i "/(^$k\s+=)(.*)/,\${s//\1 $v/;b};\$q4" "$HOSTDIR/config.cnf" \
-            || echo "ERR: missing key $k" >&2
+            || case ${k} in
+                localityName)
+                    sed -E -i "/^countryName\s+=/a localityName            = $v" \
+                        "$HOSTDIR/config.cnf";;
+                *) echo "ERR: missing key $k" >&2
+            esac
     done
     echo "New host added"
 }
