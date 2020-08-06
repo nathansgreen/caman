@@ -2,8 +2,18 @@
 
 ### Changelog
 
+**0.5.2** 2020-08-05: Updates from [Nathan Green](https://github.com/nathansgreen)
+* Support overriding distinguished name values for ``new`` command.
+* Support changing the expiration when creating a new host.
+* Support changing the bit size of the key when creating a new host or signing
+ a host or client cert.
+* Since ``localityName`` is optional for hosts, allow it to be set even if it
+ is not in the host config template.
+* Added basic sanity checks when creating a new host.
+* New help screen for the ``new`` command to explain the new options.
+
 **0.5.1**, 2020-08-03: Updates from [Nathan Green](https://github.com/nathansgreen)
-* Switch to gnu-sed (``gsed`) if macOS is detected.
+* Switch to gnu-sed (``gsed``) if macOS is detected.
 * Add ``dump`` command to show cert in text format.
 * Add ``localityName`` to default template.
 
