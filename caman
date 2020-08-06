@@ -250,6 +250,18 @@ function command_new {
     # Add a new host
     #
 
+    test ${#HOST} -gt 253 && {
+        echo "hostname length must be <= 253 but was ${#HOST}" 1>&2; exit 1; }
+    (IFS=.
+    for s in ${HOST} ; do
+        test ${#s} -gt 63 && {
+            echo "ERR: host segment length must be <= 63 but was '$s'" >&2 ;
+            exit 3; }
+        printf "%s" "$s" | grep -qE '^[A-Za-z]' || {
+            echo "ERR: host segment must start with a letter but was $s" 1>&2;
+            exit 2; }
+    done; ) || exit $?
+
     # Create new config
     mkdir "$HOSTDIR" || exit 1
     cp "$CADIR/host.cnf" "$HOSTDIR/config.cnf"
