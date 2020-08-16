@@ -281,21 +281,38 @@ function command_new {
     # Add a new host
     #
 
+    local hostname domain
     test ${#HOST} -eq 0 && { command_new_help ; exit 1; }
     case ${HOST} in
         -h|-help|-\?|--help) command_new_help; return 0;;
     esac
     test ${#HOST} -gt 253 && {
         echo "hostname length must be <= 253 but was ${#HOST}" 1>&2; exit 1; }
-    (IFS=.
-    for s in ${HOST} ; do
-        test ${#s} -gt 63 && {
+    hostname="${HOST%%.*}"
+    domain="${HOST#*.}"
+    if [ "$hostname" = "$domain" ]; then
+        [ ${#HOST} -gt 63 ] && {
             echo "ERR: host segment length must be <= 63 but was '$s'" >&2 ;
-            exit 3; }
-        printf "%s" "$s" | grep -qE '^[A-Za-z]' || {
-            echo "ERR: host segment must start with a letter but was $s" 1>&2;
             exit 2; }
-    done; ) || exit $?
+    else
+        if [ "$hostname" = '*' ]; then
+            hostname=wildcard
+            HOST="$hostname.$domain"
+            HOSTDIR="$STOREDIR/$HOST"
+        fi
+        (IFS=.
+        for s in ${HOST} ; do
+            test ${#s} -gt 63 && {
+                echo "ERR: host segment length must be <= 63 but was '$s'" >&2 ;
+                exit 3; }
+            printf "%s" "$s" | grep -qE '^[A-Za-z]' || {
+                echo "ERR: host segment must start with a letter but was $s" 1>&2;
+                exit 4; }
+        done; ) || exit $?
+        if [ "$hostname" = 'wildcard' ]; then
+            HOST="*.$domain"
+        fi
+    fi
 
     # Create new config
     mkdir "$HOSTDIR" || exit 1
@@ -305,7 +322,7 @@ function command_new {
     sed -i "s/<<HOSTNAME>>/$HOST/g" "$HOSTDIR/config.cnf"
 
     # Add alt hostnames
-    CAMAN_ALT_HOSTNAMES="${*:2}"
+    CAMAN_ALT_HOSTNAMES="$HOST ${*:3}"
     ALT_HOSTNAMES=
     for h in ${CAMAN_ALT_HOSTNAMES}; do
         printf "%s" "$h" | grep -q '=' && break
