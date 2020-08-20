@@ -315,7 +315,8 @@ function command_new {
     fi
 
     # Create new config
-    mkdir "$HOSTDIR" || exit 1
+    mkdir -p "$HOSTDIR"
+    [ -f "$HOSTDIR/config.cnf" ] && { echo "$HOSTDIR/config.cnf exists" >&2; exit 1; }
     cp "$CADIR/host.cnf" "$HOSTDIR/config.cnf"
 
     # Set hostname
