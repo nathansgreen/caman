@@ -343,7 +343,7 @@ function command_new {
         printf "%s" "$kv" | grep -q '=' || continue
         # remove optional '-' or '--' prefix from key
         k=$(printf "%s" "$kv" | cut -d= -f1 | sed -E 's/^--?//')
-        v=$(printf "%s" "$kv" | cut -d= -f2)
+        v=$(printf "%s" "$kv" | awk '-F=' '/=/ { print $2}')
         case ${k} in
             country*) k=countryName;;
             state*) k=stateOrProvinceName;;
